@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import scipy
+import math
 from matplotlib import pyplot as plt
 
 
@@ -158,3 +159,29 @@ def graphic_scatter_2d(matrix, labels, names, x_axis="Axis 1", y_axis="Axis 2"):
     plt.ylabel(y_axis)
     plt.legend()
     plt.show()
+
+
+def logpdf_GAU_ND(x, mu, C):
+    M = C.shape[1]
+    inv_C = np.linalg.inv(C)
+    [_, log_C] = np.linalg.slogdet(C)
+    log_2pi = math.log(2*math.pi)
+    y = np.zeros(x.shape[1]) if M == 1 else np.zeros(x.shape)
+    for i in range(x.shape[1]):
+        norm_x = vcol(x[:, i]) - mu
+        inter_value = np.dot(norm_x.T, inv_C)
+        dot_mult = np.dot(inter_value, norm_x)
+        MVG = (-M*log_2pi - log_C - dot_mult)/2
+        if M == 1:
+            y[i] = MVG
+        else:
+            y[:, i] = MVG
+    return y
+
+
+def logLikelihood (X, mu, c):
+    M = c.shape[1]
+    logN = logpdf_GAU_ND(X, mu, c)
+    print(logN.shape)
+    acum = logN.sum(1) if M != 1 else logN.sum()
+    return acum
