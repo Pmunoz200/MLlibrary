@@ -208,18 +208,17 @@ def logpdf_GAU_ND(x, mu, C):
     """
     M = C.shape[1]
     inv_C = np.linalg.inv(C)
+    # print(inv_C.shape)
     [_, log_C] = np.linalg.slogdet(C)
-    log_2pi = math.log(2*math.pi)
-    y = np.zeros(x.shape[1]) if M == 1 else np.zeros(x.shape)
-    for i in range(x.shape[1]):
-        norm_x = vcol(x[:, i]) - mu
-        inter_value = np.dot(norm_x.T, inv_C)
-        dot_mult = np.dot(inter_value, norm_x)
-        MVG = (-M*log_2pi - log_C - dot_mult)/2
-        if M == 1:
-            y[i] = MVG
-        else:
-            y[:, i] = MVG
+
+    #print(log_C)
+    log_2pi = -M * math.log(2*math.pi)
+    x_norm = x-mu
+    inter_value = np.dot(x_norm.T, inv_C)
+    dot_mul = np.dot(inter_value, x_norm)
+    dot_mul = np.diag(dot_mul)
+
+    y = (log_2pi - log_C - dot_mul)/2
     return y
 
 
