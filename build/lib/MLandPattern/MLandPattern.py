@@ -233,5 +233,4 @@ def logLikelihood (X, mu, c):
     M = c.shape[1]
     logN = logpdf_GAU_ND(X, mu, c)
     print(logN.shape)
-    acum = logN.sum(1) if M != 1 else logN.sum()
-    return acum
+    return logN.sum()
