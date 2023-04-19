@@ -222,15 +222,18 @@ def logpdf_GAU_ND(x, mu, C):
     return y
 
 
-def logLikelihood (X, mu, c):
+def logLikelihood (X, mu, c, tot=0):
     """
     Calculates the Logarithmic Maximum Likelihood estimator
     :param X: matrix of the datapoints of a dataset, with a size (n x m) 
     :param mu: row vector with the mean associated to each dimension
     :param c: Covariance matrix
+    :param tot: flag to define if it returns value per datapoint, or total sum of logLikelihood (default is False)
     :return: the logarithm of the likelihood of the datapoints, and the associated gaussian density
     """
     M = c.shape[1]
     logN = logpdf_GAU_ND(X, mu, c)
-    print(logN.shape)
-    return logN.sum()
+    if tot:
+        return logN.sum()
+    else:
+        return logN
