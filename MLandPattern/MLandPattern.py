@@ -237,3 +237,191 @@ def logLikelihood (X, mu, c, tot=0):
         return logN.sum()
     else:
         return logN
+    
+
+
+
+def multiclass_covariance(matrix, labels):
+    """
+    Calculates the Covariance for each class in  dataset
+    :param matrix: matrix of the datapoints of a dataset
+    :param labels: row vector with the labels associated with each row of data points
+    :return: A np matrix with size (# of classes, n, n) related with the covariance associated with each class, in each dimension
+    """
+    class_labels = np.unique(labels)
+    within_cov = np.zeros((class_labels.size, matrix.shape[0], matrix.shape[0]))
+    n = matrix.size
+    for i in class_labels:
+        centered_matrix = center_data(matrix[:, labels == i])
+        within_cov[i, :, :] = covariance(centered_matrix)
+    return within_cov
+
+
+def multiclass_mean(matrix, labels):
+    """
+    Calculates the mean for each class in  dataset
+    :param matrix: matrix of the datapoints of a dataset
+    :param labels: row vector with the labels associated with each row of data points
+    :return: A np matrix with size (# of classes, n) related with the mean associated with each class, in each dimension
+    """
+    class_labels = np.unique(labels)
+    multi_mu = np.zeros((class_labels.size, matrix.shape[0]))
+    n = matrix.size
+    for i in class_labels:
+        mu = mean_of_matrix_rows(matrix[:, labels == i])
+        multi_mu[i, :] = mu[:, 0]
+    return multi_mu
+
+
+def MVG_classifier(train_data, train_labels, test_data, test_label, prior_probability):
+    """
+    Calculates the model of the MultiVariate Gaussian classifier for a set of data, and applyes it to a test dataset
+    :param train_date: matrix of the datapoints of a dataset used to train the model
+    :param train_labels: row vector with the labels associated with each row of the training dataset
+    :param test_data: matrix of the datapoints of a dataset used to test the model
+    :param test_labels: row vector with the labels associated with each row of the test dataset
+    :param prior_probability: col vector associated with the prior probability for each dimension
+    :return SPost: matrix associated with the class posterior probabilty associated with each class
+    :return predictions: Vector associated with the prediction of the class for each test data point
+    """
+    class_labels = np.unique(train_labels)
+    cov = multiclass_covariance(train_data, train_labels)
+    # print(cov[0])
+    multi_mu = multiclass_mean(train_data, train_labels)
+    # print(multi_mu[0])
+    densities = []
+    for i in range(class_labels.size):
+        densities.append(np.exp(logLikelihood(test_data, vcol(multi_mu[i,:]), cov[i])))
+    S = np.array(densities)
+    SJoint = S * prior_probability
+    SMarginal = vrow(SJoint.sum(0))
+    SPost = SJoint/SMarginal
+    predictions = np.argmax(SPost, axis=0)
+
+    if(len(test_label) != 0):
+        acc = 0
+        for i in range(len(test_label)):
+            if predictions[i] == test_label[i]:
+                acc += 1
+        acc/=len(test_label)
+        print(f'Accuracy: {acc}')
+        print(f'Error: {1 - acc}')
+
+    return SPost, predictions
+
+
+def MVG_log_classifier(train_data, train_labels, test_data, prior_probability, test_label=[]):
+    """
+    Calculates the model of the MultiVariate Gaussian classifier on the logarithm dimension for a set of data, and applyes it to a test dataset
+    :param train_date: matrix of the datapoints of a dataset used to train the model
+    :param train_labels: row vector with the labels associated with each row of the training dataset
+    :param test_data: matrix of the datapoints of a dataset used to test the model
+    :param test_labels: row vector with the labels associated with each row of the test dataset
+    :param prior_probability: col vector associated with the prior probability for each dimension
+    :return SPost: matrix associated with the class posterior probabilty associated with each class
+    :return predictions: Vector associated with the prediction of the class for each test data point
+    """
+    class_labels = np.unique(train_labels)
+    cov = multiclass_covariance(train_data, train_labels)
+    # print(cov[0])
+    multi_mu = multiclass_mean(train_data, train_labels)
+    # print(multi_mu[0])
+    densities = []
+    for i in range(class_labels.size):
+        densities.append(logLikelihood(test_data, vcol(multi_mu[i,:]), cov[i]))
+    S = np.array(densities)
+    logSJoint = S + np.log(prior_probability)
+    logSMarginal = vrow(scipy.special.logsumexp(logSJoint, axis=0))
+    logSPost = logSJoint - logSMarginal
+    SPost = np.exp(logSPost)
+    predictions = np.argmax(SPost, axis=0)
+
+    if(len(test_label) != 0):
+        acc = 0
+        for i in range(len(test_label)):
+            if predictions[i] == test_label[i]:
+                acc += 1
+        acc/=len(test_label)
+        print(f'Accuracy: {acc}')
+        print(f'Error: {1 - acc}')
+
+    return SPost, predictions
+
+
+def Naive_classifier(train_data, train_labels, test_data, prior_probability, test_label=[]):
+    """
+    Calculates the model of the Naive classifier for a set of data, and applyes it to a test dataset
+    :param train_date: matrix of the datapoints of a dataset used to train the model
+    :param train_labels: row vector with the labels associated with each row of the training dataset
+    :param test_data: matrix of the datapoints of a dataset used to test the model
+    :param test_labels: row vector with the labels associated with each row of the test dataset
+    :param prior_probability: col vector associated with the prior probability for each dimension
+    :return SPost: matrix associated with the class posterior probabilty associated with each class
+    :return predictions: Vector associated with the prediction of the class for each test data point
+    """
+    class_labels = np.unique(train_labels)
+    cov = multiclass_covariance(train_data, train_labels)
+    identity = np.eye(cov.shape[1])
+    # print(identity)
+    cov = cov*identity
+    multi_mu = multiclass_mean(train_data, train_labels)
+    # print(multi_mu[0])
+    densities = []
+    for i in range(class_labels.size):
+        densities.append(np.exp(logLikelihood(test_data, vcol(multi_mu[i,:]), cov[i])))
+    S = np.array(densities)
+    SJoint = S * prior_probability
+    SMarginal = vrow(SJoint.sum(0))
+    SPost = SJoint/SMarginal
+    predictions = np.argmax(SPost, axis=0)
+
+    if(len(test_label) != 0):
+        acc = 0
+        for i in range(len(test_label)):
+            if predictions[i] == test_label[i]:
+                acc += 1
+        acc/=len(test_label)
+        print(f'Accuracy: {acc*100}%')
+        print(f'Error: {(1 - acc)*100}%')
+
+    return SPost, predictions
+
+
+def Naive_log_classifier(train_data, train_labels, test_data, prior_probability, test_label=[]):
+    """
+    Calculates the model of the Naive classifier on the logarithm realm for a set of data, and applyes it to a test dataset
+    :param train_date: matrix of the datapoints of a dataset used to train the model
+    :param train_labels: row vector with the labels associated with each row of the training dataset
+    :param test_data: matrix of the datapoints of a dataset used to test the model
+    :param test_labels: row vector with the labels associated with each row of the test dataset
+    :param prior_probability: col vector associated with the prior probability for each dimension
+    :return SPost: matrix associated with the class posterior probabilty associated with each class
+    :return predictions: Vector associated with the prediction of the class for each test data point
+    """
+    class_labels = np.unique(train_labels)
+    cov = multiclass_covariance(train_data, train_labels)
+    identity = np.eye(cov.shape[1])
+    # print(identity)
+    cov = cov*identity
+    multi_mu = multiclass_mean(train_data, train_labels)
+    # print(multi_mu[0])
+    densities = []
+    for i in range(class_labels.size):
+        densities.append(logLikelihood(test_data, vcol(multi_mu[i,:]), cov[i]))
+    S = np.array(densities)
+    logSJoint = S + np.log(prior_probability)
+    logSMarginal = vrow(scipy.special.logsumexp(logSJoint, axis=0))
+    logSPost = logSJoint - logSMarginal
+    SPost = np.exp(logSPost)
+    predictions = np.argmax(SPost, axis=0)
+
+    if(len(test_label) != 0):
+        acc = 0
+        for i in range(len(test_label)):
+            if predictions[i] == test_label[i]:
+                acc += 1
+        acc/=len(test_label)
+        print(f'Accuracy: {acc*100}%')
+        print(f'Error: {(1 - acc)*100}%')
+
+    return SPost, predictions
