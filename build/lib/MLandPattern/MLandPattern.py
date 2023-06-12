@@ -30,6 +30,23 @@ def loadCSV(pathname, class_label, attribute_names):
     label = np.array(label_list)
     return attribute, label
 
+def load(pathname, vizualization=0):
+    """
+    Loads simple csv, assuming first n-1 columns as attributes, and n col as class labels
+    :param pathname: path to the data file
+    :param vizualization: flag to determine if print on console dataframe head (default false)
+    :return: attributes, labels. attrributes contains a numpy matrix with the attributes of the dataset. labels contains a numpy matrix
+            with the class labels as numbers, ranging from [0, n]
+    """
+    df = pd.read_csv(pathname, header=None)
+    if vizualization:
+        print(df.head())
+    attribute = np.array(df.iloc[:, 0 : len(df.columns) - 1])
+    attribute = attribute.T
+    # print(attribute)
+    label = np.array(df.iloc[:, -1])
+
+    return attribute, label
 
 def vcol(vector):
     """
@@ -109,13 +126,13 @@ def PCA(attribute_matrix, m):
     Calculates the PCA dimension reduction of a matrix to a m-dimension sub-space
     :param attribute_matrix: matrix with the datapoints, with each row being a point
     :param m: number of dimensions of the targeted sub-space
-    :return: a projection matrix P
+    :return: The dataset after the dimensionality reduction
     """
     DC = center_data(attribute_matrix)
     C = covariance(DC, 1)
     s, U = eigen(C)
     P = U[:, ::-1][:, 0:m]
-    return P
+    return np.dot(P.T, attribute_matrix)
 
 
 def covariance_within_class(matrix_values, label):
@@ -281,8 +298,9 @@ def MVG_classifier(train_data, train_labels, test_data, test_label, prior_probab
     :param test_data: matrix of the datapoints of a dataset used to test the model
     :param test_labels: row vector with the labels associated with each row of the test dataset
     :param prior_probability: col vector associated with the prior probability for each dimension
-    :return SPost: matrix associated with the class posterior probabilty associated with each class
+    :return S: matrix associated with the probability array
     :return predictions: Vector associated with the prediction of the class for each test data point
+    :return acc: Accuracy of the validation set
     """
     class_labels = np.unique(train_labels)
     cov = multiclass_covariance(train_data, train_labels)
@@ -304,10 +322,11 @@ def MVG_classifier(train_data, train_labels, test_data, test_label, prior_probab
             if predictions[i] == test_label[i]:
                 acc += 1
         acc/=len(test_label)
-        print(f'Accuracy: {acc}')
-        print(f'Error: {1 - acc}')
+        acc = round(acc*100, 2)
+        print(f'Accuracy: {acc}%')
+        print(f'Error: {(100 - acc)}%')
 
-    return SPost, predictions
+    return S, predictions, acc
 
 
 def MVG_log_classifier(train_data, train_labels, test_data, prior_probability, test_label=[]):
@@ -318,8 +337,9 @@ def MVG_log_classifier(train_data, train_labels, test_data, prior_probability, t
     :param test_data: matrix of the datapoints of a dataset used to test the model
     :param test_labels: row vector with the labels associated with each row of the test dataset
     :param prior_probability: col vector associated with the prior probability for each dimension
-    :return SPost: matrix associated with the class posterior probabilty associated with each class
+    :return S: matrix associated with the probability array
     :return predictions: Vector associated with the prediction of the class for each test data point
+    :return acc: Accuracy of the validation set
     """
     class_labels = np.unique(train_labels)
     cov = multiclass_covariance(train_data, train_labels)
@@ -342,10 +362,11 @@ def MVG_log_classifier(train_data, train_labels, test_data, prior_probability, t
             if predictions[i] == test_label[i]:
                 acc += 1
         acc/=len(test_label)
-        print(f'Accuracy: {acc}')
-        print(f'Error: {1 - acc}')
+        acc = round(acc*100, 2)
+        print(f'Accuracy: {acc}%')
+        print(f'Error: {(100 - acc)}%')
 
-    return SPost, predictions
+    return S, predictions, acc
 
 
 def Naive_classifier(train_data, train_labels, test_data, prior_probability, test_label=[]):
@@ -356,8 +377,9 @@ def Naive_classifier(train_data, train_labels, test_data, prior_probability, tes
     :param test_data: matrix of the datapoints of a dataset used to test the model
     :param test_labels: row vector with the labels associated with each row of the test dataset
     :param prior_probability: col vector associated with the prior probability for each dimension
-    :return SPost: matrix associated with the class posterior probabilty associated with each class
+    :return S: matrix associated with the probability array
     :return predictions: Vector associated with the prediction of the class for each test data point
+    :return acc: Accuracy of the validation set
     """
     class_labels = np.unique(train_labels)
     cov = multiclass_covariance(train_data, train_labels)
@@ -381,10 +403,11 @@ def Naive_classifier(train_data, train_labels, test_data, prior_probability, tes
             if predictions[i] == test_label[i]:
                 acc += 1
         acc/=len(test_label)
-        print(f'Accuracy: {acc*100}%')
-        print(f'Error: {(1 - acc)*100}%')
+        acc = round(acc*100, 2)
+        print(f'Accuracy: {acc}%')
+        print(f'Error: {(100 - acc)}%')
 
-    return SPost, predictions
+    return S, predictions, acc
 
 
 def Naive_log_classifier(train_data, train_labels, test_data, prior_probability, test_label=[]):
@@ -395,8 +418,9 @@ def Naive_log_classifier(train_data, train_labels, test_data, prior_probability,
     :param test_data: matrix of the datapoints of a dataset used to test the model
     :param test_labels: row vector with the labels associated with each row of the test dataset
     :param prior_probability: col vector associated with the prior probability for each dimension
-    :return SPost: matrix associated with the class posterior probabilty associated with each class
+    :return S: matrix associated with the probability array
     :return predictions: Vector associated with the prediction of the class for each test data point
+    :return acc: Accuracy of the validation set
     """
     class_labels = np.unique(train_labels)
     cov = multiclass_covariance(train_data, train_labels)
@@ -421,7 +445,114 @@ def Naive_log_classifier(train_data, train_labels, test_data, prior_probability,
             if predictions[i] == test_label[i]:
                 acc += 1
         acc/=len(test_label)
-        print(f'Accuracy: {acc*100}%')
-        print(f'Error: {(1 - acc)*100}%')
+        acc = round(acc*100, 2)
+        print(f'Accuracy: {acc}%')
+        print(f'Error: {(100 - acc)}%')
 
-    return SPost, predictions
+    return S, predictions, acc
+
+
+def TiedGaussian(train_data, train_labels, test_data, prior_probability, test_label=[]):
+    '''
+    Calculates the model of the Tied Gaussian classifier for a set of data, and applyes it to a test dataset
+    :param train_date: matrix of the datapoints of a dataset used to train the model
+    :param train_labels: row vector with the labels associated with each row of the training dataset
+    :param test_data: matrix of the datapoints of a dataset used to test the model
+    :param test_labels: row vector with the labels associated with each row of the test dataset
+    :param prior_probability: col vector associated with the prior probability for each dimension
+    :return S: matrix associated with the probability array
+    :return predictions: Vector associated with the prediction of the class for each test data point
+    :return acc: Accuracy of the validation set
+    '''
+    class_labels = np.unique(train_labels)
+    with_cov = covariance_within_class(train_data, train_labels)
+    multi_mu = multiclass_mean(train_data, train_labels)
+    densities = []
+    for i in range(class_labels.size):
+        densities.append(
+            np.exp(logLikelihood(test_data, vcol(multi_mu[i, :]), with_cov))
+        )
+    S = np.array(densities)
+
+    SJoint = S * prior_probability
+    SMarginal = vrow(SJoint.sum(0))
+    SPost = SJoint / SMarginal
+    predictions = np.argmax(SPost, axis=0)
+
+    if len(test_label) != 0:
+        acc = 0
+        for i in range(len(test_label)):
+            if predictions[i] == test_label[i]:
+                acc += 1
+        acc /= len(test_label)
+        print(f"Accuracy: {acc}")
+        print(f"Error: {1 - acc}")
+
+    return S, predictions, acc
+
+def Tied_Naive_classifier(
+    train_data, train_labels, test_data, prior_probability, test_label=[]
+):
+    '''
+    Calculates the model of the Tied Naive classifier for a set of data, and applyes it to a test dataset
+    :param train_date: matrix of the datapoints of a dataset used to train the model
+    :param train_labels: row vector with the labels associated with each row of the training dataset
+    :param test_data: matrix of the datapoints of a dataset used to test the model
+    :param test_labels: row vector with the labels associated with each row of the test dataset
+    :param prior_probability: col vector associated with the prior probability for each dimension
+    :return S: matrix associated with the probability array
+    :return predictions: Vector associated with the prediction of the class for each test data point
+    :return acc: Accuracy of the validation set
+    '''
+    class_labels = np.unique(train_labels)
+    cov = covariance_within_class(train_data, train_labels)
+    identity = np.eye(cov.shape[1])
+    cov = cov * identity
+    multi_mu = multiclass_mean(train_data, train_labels)
+    densities = []
+    for i in range(class_labels.size):
+        densities.append(
+            np.exp(logLikelihood(test_data, vcol(multi_mu[i, :]), cov))
+        )
+    S = np.array(densities)
+    SJoint = S * prior_probability
+    SMarginal = vrow(SJoint.sum(0))
+    SPost = SJoint / SMarginal
+    predictions = np.argmax(SPost, axis=0)
+
+    if len(test_label) != 0:
+        acc = 0
+        for i in range(len(test_label)):
+            if predictions[i] == test_label[i]:
+                acc += 1
+        acc /= len(test_label)
+        print(f"Accuracy: {acc*100}%")
+        print(f"Error: {(1 - acc)*100}%")
+
+    return S, predictions, acc
+
+
+
+def split_db(D, L, ratio, seed=0):
+    '''
+    Splits a dataset D into a training set and a validation set, based on the ratio
+    :param D: matrix of attributes of the dataset
+    :param L: vector of labels of the dataset
+    :param ratio: ratio used to divide the dataset (e.g. 2 / 3)
+    :param seed: seed for the random number generator of numpy (default 0)
+    :return (DTR, LTR), (DTE, LTE): (DTR, LTR) attributes and labels releated to the training sub-set. (DTE, LTE) attributes and labels releated to the testing sub-set.
+
+    '''
+    nTrain = int(D.shape[1] * ratio)
+    np.random.seed(seed)
+    idx = np.random.permutation(D.shape[1])
+    idxTrain = idx[0:nTrain]
+    idxTest = idx[nTrain:]
+
+    DTR = D[:, idxTrain]
+    DTE = D[:, idxTest]
+    LTR = L[idxTrain]
+    LTE = L[idxTest]
+
+    return (DTR, LTR), (DTE, LTE)
+
