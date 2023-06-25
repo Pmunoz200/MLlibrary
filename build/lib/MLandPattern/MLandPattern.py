@@ -125,14 +125,15 @@ def PCA(attribute_matrix, m):
     """
     Calculates the PCA dimension reduction of a matrix to a m-dimension sub-space
     :param attribute_matrix: matrix with the datapoints, with each row being a point
-    :param m: number of dimensions of the targeted sub-space
+    `param m` number of dimensions of the targeted sub-space
+    :return: The matrix P defined to do the PCA approximation
     :return: The dataset after the dimensionality reduction
     """
     DC = center_data(attribute_matrix)
     C = covariance(DC, 1)
     s, U = eigen(C)
     P = U[:, ::-1][:, 0:m]
-    return np.dot(P.T, attribute_matrix)
+    return P, np.dot(P.T, attribute_matrix)
 
 
 def covariance_within_class(matrix_values, label):
