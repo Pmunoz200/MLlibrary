@@ -30,6 +30,29 @@ def loadCSV(pathname, class_label, attribute_names):
     label = np.array(label_list)
     return attribute, label
 
+def split_db(D, L, ratio, seed=0):
+    '''
+    Splits a dataset D into a training set and a validation set, based on the ratio
+    :param D: matrix of attributes of the dataset
+    :param L: vector of labels of the dataset
+    :param ratio: ratio used to divide the dataset (e.g. 2 / 3)
+    :param seed: seed for the random number generator of numpy (default 0)
+    :return (DTR, LTR), (DTE, LTE): (DTR, LTR) attributes and labels releated to the training sub-set. (DTE, LTE) attributes and labels releated to the testing sub-set.
+
+    '''
+    nTrain = int(D.shape[1] * ratio)
+    np.random.seed(seed)
+    idx = np.random.permutation(D.shape[1])
+    idxTrain = idx[0:nTrain]
+    idxTest = idx[nTrain:]
+
+    DTR = D[:, idxTrain]
+    DTE = D[:, idxTest]
+    LTR = L[idxTrain]
+    LTE = L[idxTest]
+
+    return (DTR, LTR), (DTE, LTE)
+
 def load(pathname, vizualization=0):
     """
     Loads simple csv, assuming first n-1 columns as attributes, and n col as class labels
@@ -198,7 +221,7 @@ def LDA1(matrix_values, label, m):
     :return: the LDA directions matrix (W), and the orthogonal sub-space of the directions (U)
     """
     class_labels = np.unique(label)
-    [Sw, Sb] = between_within_covariance(matrix_values, label, class_labels)
+    [Sw, Sb] = between_within_covariance(matrix_values, label)
     s, U = scipy.linalg.eigh(Sb, Sw)
     W = U[:, ::-1][:, 0:m]
     UW, _, _ = np.linalg.svd(W)
@@ -532,28 +555,104 @@ def Tied_Naive_classifier(
 
     return S, predictions, acc
 
-
-
-def split_db(D, L, ratio, seed=0):
+def Generative_models(
+    train_attributes, train_labels, test_attributes, prior_prob, test_labels, model
+):
     '''
-    Splits a dataset D into a training set and a validation set, based on the ratio
-    :param D: matrix of attributes of the dataset
-    :param L: vector of labels of the dataset
-    :param ratio: ratio used to divide the dataset (e.g. 2 / 3)
-    :param seed: seed for the random number generator of numpy (default 0)
-    :return (DTR, LTR), (DTE, LTE): (DTR, LTR) attributes and labels releated to the training sub-set. (DTE, LTE) attributes and labels releated to the testing sub-set.
-
+    Calculates the desired generative model
+    :param train_date: matrix of the datapoints of a dataset used to train the model
+    :param train_labels: row vector with the labels associated with each row of the training dataset
+    :param test_data: matrix of the datapoints of a dataset used to test the model
+    :param test_labels: row vector with the labels associated with each row of the test dataset
+    :param prior_probability: col vector associated with the prior probability for each dimension
+    :param: `model`defines which model, based on the following criterias:
+        - `mvg`: Multivariate Gaussian Model
+        - `Naive`: Naive Bayes Classifier
+        - `Tied Gaussian`: Tied Multivariate Gaussian Model
+        - `Tied naive`: Tied Naive Bayes Classifier
+    :return S: matrix associated with the probability array
+    :return predictions: Vector associated with the prediction of the class for each test data point
+    :return acc: Accuracy of the validation set
     '''
-    nTrain = int(D.shape[1] * ratio)
-    np.random.seed(seed)
-    idx = np.random.permutation(D.shape[1])
-    idxTrain = idx[0:nTrain]
-    idxTest = idx[nTrain:]
+    if model.lower() == "mvg":
+        [Probabilities, Prediction, accuracy] = MVG_log_classifier(
+            train_attributes, train_labels, test_attributes, prior_prob, test_labels
+        )
+    elif model.lower() == "naive":
+        [Probabilities, Prediction, accuracy] = Naive_log_classifier(
+            train_attributes, train_labels, test_attributes, prior_prob, test_labels
+        )
+    elif model.lower() == "tied gaussian":
+        [Probabilities, Prediction, accuracy] = TiedGaussian(
+            train_attributes, train_labels, test_attributes, prior_prob, test_labels
+        )
+        accuracy = round(accuracy * 100, 2)
+    elif model.lower() == "tied naive":
+        [Probabilities, Prediction, accuracy] = Tied_Naive_classifier(
+            train_attributes, train_labels, test_attributes, prior_prob, test_labels
+        )
+        accuracy = round(accuracy * 100, 2)
+    return Probabilities, Prediction, accuracy
 
-    DTR = D[:, idxTrain]
-    DTE = D[:, idxTest]
-    LTR = L[idxTrain]
-    LTE = L[idxTest]
-
-    return (DTR, LTR), (DTE, LTE)
+def k_fold(k, attributes, labels, previous_prob, model="mvg"):
+    """
+    Applies a k-fold cross validation on the dataset, applying the specified model.
+    :param: `k` Number of partitions to divide the dataset
+    :param: `attributes` matrix containing the whole training attributes of the dataset
+    :param: `labels` the label vector related to the attribute matrix
+    :param: `previous_prob` the column vector related to the prior probability of the dataset
+    :param: `model` (optional). Defines the model to be applied to the model:
+        - `mvg`: Multivariate Gaussian Model
+        - `Naive`: Naive Bayes Classifier
+        - `Tied Gaussian`: Tied Multivariate Gaussian Model
+        - `Tied naive`: Tied Naive Bayes Classifier
+    :return final_acc: Accuracy of the validation set
+    :return final_S: matrix associated with the probability array
+    """
+    section_size = int(attributes.shape[1] / k)
+    cont = 0
+    low = 0
+    high = section_size
+    final_acc = -1
+    model = model.lower()
+    for i in range(k):
+        if not i:
+            validation_att = attributes[:, low:high]
+            validation_labels = labels[low:high]
+            train_att = attributes[:, high:]
+            train_labels = labels[high:]
+            [S, _, acc] = Generative_models(
+                train_att,
+                train_labels,
+                validation_att,
+                previous_prob,
+                validation_labels,
+                model
+            )
+            final_acc = acc
+            final_S = S
+            continue
+        low += section_size
+        high += section_size
+        if high > attributes.shape[1]:
+            high = attributes.shape
+        validation_att = attributes[:, low:high]
+        validation_labels = labels[low:high]
+        train_att = attributes[:, :low]
+        train_labels = labels[:low]
+        train_att = np.hstack((train_att, attributes[:, high:]))
+        train_labels = np.hstack((train_labels, labels[high:]))
+        [S, _, acc] = Generative_models(
+                train_att,
+                train_labels,
+                validation_att,
+                previous_prob,
+                validation_labels,
+                model
+            )
+        final_acc += acc
+        final_S += S
+    final_acc /= k
+    final_S /= k
+    return final_acc, final_S
 
