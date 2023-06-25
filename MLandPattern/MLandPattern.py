@@ -323,8 +323,8 @@ def MVG_classifier(train_data, train_labels, test_data, test_label, prior_probab
                 acc += 1
         acc/=len(test_label)
         acc = round(acc*100, 2)
-        print(f'Accuracy: {acc}%')
-        print(f'Error: {(100 - acc)}%')
+        # print(f'Accuracy: {acc}%')
+        # print(f'Error: {(100 - acc)}%')
 
     return S, predictions, acc
 
@@ -363,8 +363,8 @@ def MVG_log_classifier(train_data, train_labels, test_data, prior_probability, t
                 acc += 1
         acc/=len(test_label)
         acc = round(acc*100, 2)
-        print(f'Accuracy: {acc}%')
-        print(f'Error: {(100 - acc)}%')
+        # print(f'Accuracy: {acc}%')
+        # print(f'Error: {(100 - acc)}%')
 
     return S, predictions, acc
 
@@ -404,8 +404,8 @@ def Naive_classifier(train_data, train_labels, test_data, prior_probability, tes
                 acc += 1
         acc/=len(test_label)
         acc = round(acc*100, 2)
-        print(f'Accuracy: {acc}%')
-        print(f'Error: {(100 - acc)}%')
+        # print(f'Accuracy: {acc}%')
+        # print(f'Error: {(100 - acc)}%')
 
     return S, predictions, acc
 
@@ -446,8 +446,8 @@ def Naive_log_classifier(train_data, train_labels, test_data, prior_probability,
                 acc += 1
         acc/=len(test_label)
         acc = round(acc*100, 2)
-        print(f'Accuracy: {acc}%')
-        print(f'Error: {(100 - acc)}%')
+        # print(f'Accuracy: {acc}%')
+        # print(f'Error: {(100 - acc)}%')
 
     return S, predictions, acc
 
@@ -485,8 +485,8 @@ def TiedGaussian(train_data, train_labels, test_data, prior_probability, test_la
             if predictions[i] == test_label[i]:
                 acc += 1
         acc /= len(test_label)
-        print(f"Accuracy: {acc}")
-        print(f"Error: {1 - acc}")
+        # print(f"Accuracy: {acc}")
+        # print(f"Error: {1 - acc}")
 
     return S, predictions, acc
 
@@ -526,8 +526,8 @@ def Tied_Naive_classifier(
             if predictions[i] == test_label[i]:
                 acc += 1
         acc /= len(test_label)
-        print(f"Accuracy: {acc*100}%")
-        print(f"Error: {(1 - acc)*100}%")
+        # print(f"Accuracy: {acc*100}%")
+        # print(f"Error: {(1 - acc)*100}%")
 
     return S, predictions, acc
 
