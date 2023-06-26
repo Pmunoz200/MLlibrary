@@ -602,7 +602,7 @@ def Generative_models(
     return Probabilities, Prediction, accuracy
 
 
-def k_fold(k, attributes, labels, previous_prob, model="mvg", PCA_m=0):
+def k_fold(k, attributes, labels, previous_prob, model="mvg", PCA_m=0, LDA_m=0):
     """
     Applies a k-fold cross validation on the dataset, applying the specified model.
     :param: `k` Number of partitions to divide the dataset
@@ -632,6 +632,10 @@ def k_fold(k, attributes, labels, previous_prob, model="mvg", PCA_m=0):
             if PCA_m:
                 P, train_att = PCA(train_att, PCA_m)
                 validation_att = np.dot(P.T, validation_att)
+                if LDA_m:
+                    W, _ = LDA1(train_att, train_labels, LDA_m)
+                    train_att = np.dot(W.T, train_att)
+                    validation_att = np.dot(W.T, validation_att)
             [S, _, acc] = Generative_models(
                 train_att,
                 train_labels,
@@ -656,6 +660,10 @@ def k_fold(k, attributes, labels, previous_prob, model="mvg", PCA_m=0):
         if PCA_m:
             P, train_att = PCA(train_att, PCA_m)
             validation_att = np.dot(P.T, validation_att)
+            if LDA_m:
+                W, _ = LDA1(train_att, train_labels, LDA_m)
+                train_att = np.dot(W.T, train_att)
+                validation_att = np.dot(W.T, validation_att)
         [S, _, acc] = Generative_models(
             train_att,
             train_labels,
