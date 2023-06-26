@@ -7,7 +7,7 @@ from matplotlib import pyplot as plt
 
 def loadCSV(pathname, class_label, attribute_names):
     """
-    Extracts the attributes and class labels of an input 
+    Extracts the attributes and class labels of an input
     csv file dataset
     All arguments must be of equal length.
     :param pathname: path to the data file
@@ -20,9 +20,9 @@ def loadCSV(pathname, class_label, attribute_names):
     df = pd.read_csv(pathname, header=None)
 
     # Extract the attributes from the dataframe
-    attribute = np.array(df.iloc[:, 0:len(attribute_names)])
+    attribute = np.array(df.iloc[:, 0 : len(attribute_names)])
     attribute = attribute.T
-    
+
     # Re-assign the values of the class names to numeric values
     label_list = []
     for lab in df.loc[:, len(attribute_names)]:
@@ -30,8 +30,9 @@ def loadCSV(pathname, class_label, attribute_names):
     label = np.array(label_list)
     return attribute, label
 
+
 def split_db(D, L, ratio, seed=0):
-    '''
+    """
     Splits a dataset D into a training set and a validation set, based on the ratio
     :param D: matrix of attributes of the dataset
     :param L: vector of labels of the dataset
@@ -39,7 +40,7 @@ def split_db(D, L, ratio, seed=0):
     :param seed: seed for the random number generator of numpy (default 0)
     :return (DTR, LTR), (DTE, LTE): (DTR, LTR) attributes and labels releated to the training sub-set. (DTE, LTE) attributes and labels releated to the testing sub-set.
 
-    '''
+    """
     nTrain = int(D.shape[1] * ratio)
     np.random.seed(seed)
     idx = np.random.permutation(D.shape[1])
@@ -52,6 +53,7 @@ def split_db(D, L, ratio, seed=0):
     LTE = L[idxTest]
 
     return (DTR, LTR), (DTE, LTE)
+
 
 def load(pathname, vizualization=0):
     """
@@ -70,6 +72,7 @@ def load(pathname, vizualization=0):
     label = np.array(df.iloc[:, -1])
 
     return attribute, label
+
 
 def vcol(vector):
     """
@@ -115,7 +118,7 @@ def center_data(matrix):
     return centered_data
 
 
-def covariance(matrix, centered = 0):
+def covariance(matrix, centered=0):
     """
     Calculates the Sample Covariance Matrix of a centered-matrix
     :param matrix: Matrix of data points
@@ -126,7 +129,7 @@ def covariance(matrix, centered = 0):
         matrix = center_data(matrix)
     n = matrix.shape[1]
     cov = np.dot(matrix, matrix.T)
-    cov = np.multiply(cov, 1/n)
+    cov = np.multiply(cov, 1 / n)
     return cov
 
 
@@ -200,7 +203,7 @@ def covariance_between_class(matrix_values, label):
     return between_cov
 
 
-def between_within_covariance (matrix_values, label):
+def between_within_covariance(matrix_values, label):
     """
     Calculates both the average within covariance, and the between covariance of all classes on a dataset
     :param matrix_values: matrix with the values associated to the parameters of the dataset
@@ -242,7 +245,7 @@ def graphic_scatter_2d(matrix, labels, names, x_axis="Axis 1", y_axis="Axis 2"):
 def logpdf_GAU_ND(x, mu, C):
     """
     Calculates the Logarithmic MultiVariate Gaussian Density for a set of vector values
-    :param x: matrix of the datapoints of a dataset, with a size (n x m) 
+    :param x: matrix of the datapoints of a dataset, with a size (n x m)
     :param mu: row vector with the mean associated to each dimension
     :param C: Covariance matrix
     :return: a matrix with the Gaussian Density associated with each point of X, over each dimension
@@ -252,21 +255,21 @@ def logpdf_GAU_ND(x, mu, C):
     # print(inv_C.shape)
     [_, log_C] = np.linalg.slogdet(C)
 
-    #print(log_C)
-    log_2pi = -M * math.log(2*math.pi)
-    x_norm = x-mu
+    # print(log_C)
+    log_2pi = -M * math.log(2 * math.pi)
+    x_norm = x - mu
     inter_value = np.dot(x_norm.T, inv_C)
     dot_mul = np.dot(inter_value, x_norm)
     dot_mul = np.diag(dot_mul)
 
-    y = (log_2pi - log_C - dot_mul)/2
+    y = (log_2pi - log_C - dot_mul) / 2
     return y
 
 
-def logLikelihood (X, mu, c, tot=0):
+def logLikelihood(X, mu, c, tot=0):
     """
     Calculates the Logarithmic Maximum Likelihood estimator
-    :param X: matrix of the datapoints of a dataset, with a size (n x m) 
+    :param X: matrix of the datapoints of a dataset, with a size (n x m)
     :param mu: row vector with the mean associated to each dimension
     :param c: Covariance matrix
     :param tot: flag to define if it returns value per datapoint, or total sum of logLikelihood (default is False)
@@ -278,8 +281,6 @@ def logLikelihood (X, mu, c, tot=0):
         return logN.sum()
     else:
         return logN
-    
-
 
 
 def multiclass_covariance(matrix, labels):
@@ -333,27 +334,29 @@ def MVG_classifier(train_data, train_labels, test_data, test_label, prior_probab
     # print(multi_mu[0])
     densities = []
     for i in range(class_labels.size):
-        densities.append(np.exp(logLikelihood(test_data, vcol(multi_mu[i,:]), cov[i])))
+        densities.append(np.exp(logLikelihood(test_data, vcol(multi_mu[i, :]), cov[i])))
     S = np.array(densities)
     SJoint = S * prior_probability
     SMarginal = vrow(SJoint.sum(0))
-    SPost = SJoint/SMarginal
+    SPost = SJoint / SMarginal
     predictions = np.argmax(SPost, axis=0)
 
-    if(len(test_label) != 0):
+    if len(test_label) != 0:
         acc = 0
         for i in range(len(test_label)):
             if predictions[i] == test_label[i]:
                 acc += 1
-        acc/=len(test_label)
-        acc = round(acc*100, 2)
+        acc /= len(test_label)
+        acc = round(acc * 100, 2)
         # print(f'Accuracy: {acc}%')
         # print(f'Error: {(100 - acc)}%')
 
     return S, predictions, acc
 
 
-def MVG_log_classifier(train_data, train_labels, test_data, prior_probability, test_label=[]):
+def MVG_log_classifier(
+    train_data, train_labels, test_data, prior_probability, test_label=[]
+):
     """
     Calculates the model of the MultiVariate Gaussian classifier on the logarithm dimension for a set of data, and applyes it to a test dataset
     :param train_date: matrix of the datapoints of a dataset used to train the model
@@ -372,7 +375,7 @@ def MVG_log_classifier(train_data, train_labels, test_data, prior_probability, t
     # print(multi_mu[0])
     densities = []
     for i in range(class_labels.size):
-        densities.append(logLikelihood(test_data, vcol(multi_mu[i,:]), cov[i]))
+        densities.append(logLikelihood(test_data, vcol(multi_mu[i, :]), cov[i]))
     S = np.array(densities)
     logSJoint = S + np.log(prior_probability)
     logSMarginal = vrow(scipy.special.logsumexp(logSJoint, axis=0))
@@ -380,20 +383,22 @@ def MVG_log_classifier(train_data, train_labels, test_data, prior_probability, t
     SPost = np.exp(logSPost)
     predictions = np.argmax(SPost, axis=0)
 
-    if(len(test_label) != 0):
+    if len(test_label) != 0:
         acc = 0
         for i in range(len(test_label)):
             if predictions[i] == test_label[i]:
                 acc += 1
-        acc/=len(test_label)
-        acc = round(acc*100, 2)
+        acc /= len(test_label)
+        acc = round(acc * 100, 2)
         # print(f'Accuracy: {acc}%')
         # print(f'Error: {(100 - acc)}%')
 
     return S, predictions, acc
 
 
-def Naive_classifier(train_data, train_labels, test_data, prior_probability, test_label=[]):
+def Naive_classifier(
+    train_data, train_labels, test_data, prior_probability, test_label=[]
+):
     """
     Calculates the model of the Naive classifier for a set of data, and applyes it to a test dataset
     :param train_date: matrix of the datapoints of a dataset used to train the model
@@ -409,32 +414,34 @@ def Naive_classifier(train_data, train_labels, test_data, prior_probability, tes
     cov = multiclass_covariance(train_data, train_labels)
     identity = np.eye(cov.shape[1])
     # print(identity)
-    cov = cov*identity
+    cov = cov * identity
     multi_mu = multiclass_mean(train_data, train_labels)
     # print(multi_mu[0])
     densities = []
     for i in range(class_labels.size):
-        densities.append(np.exp(logLikelihood(test_data, vcol(multi_mu[i,:]), cov[i])))
+        densities.append(np.exp(logLikelihood(test_data, vcol(multi_mu[i, :]), cov[i])))
     S = np.array(densities)
     SJoint = S * prior_probability
     SMarginal = vrow(SJoint.sum(0))
-    SPost = SJoint/SMarginal
+    SPost = SJoint / SMarginal
     predictions = np.argmax(SPost, axis=0)
 
-    if(len(test_label) != 0):
+    if len(test_label) != 0:
         acc = 0
         for i in range(len(test_label)):
             if predictions[i] == test_label[i]:
                 acc += 1
-        acc/=len(test_label)
-        acc = round(acc*100, 2)
+        acc /= len(test_label)
+        acc = round(acc * 100, 2)
         # print(f'Accuracy: {acc}%')
         # print(f'Error: {(100 - acc)}%')
 
     return S, predictions, acc
 
 
-def Naive_log_classifier(train_data, train_labels, test_data, prior_probability, test_label=[]):
+def Naive_log_classifier(
+    train_data, train_labels, test_data, prior_probability, test_label=[]
+):
     """
     Calculates the model of the Naive classifier on the logarithm realm for a set of data, and applyes it to a test dataset
     :param train_date: matrix of the datapoints of a dataset used to train the model
@@ -450,12 +457,12 @@ def Naive_log_classifier(train_data, train_labels, test_data, prior_probability,
     cov = multiclass_covariance(train_data, train_labels)
     identity = np.eye(cov.shape[1])
     # print(identity)
-    cov = cov*identity
+    cov = cov * identity
     multi_mu = multiclass_mean(train_data, train_labels)
     # print(multi_mu[0])
     densities = []
     for i in range(class_labels.size):
-        densities.append(logLikelihood(test_data, vcol(multi_mu[i,:]), cov[i]))
+        densities.append(logLikelihood(test_data, vcol(multi_mu[i, :]), cov[i]))
     S = np.array(densities)
     logSJoint = S + np.log(prior_probability)
     logSMarginal = vrow(scipy.special.logsumexp(logSJoint, axis=0))
@@ -463,13 +470,13 @@ def Naive_log_classifier(train_data, train_labels, test_data, prior_probability,
     SPost = np.exp(logSPost)
     predictions = np.argmax(SPost, axis=0)
 
-    if(len(test_label) != 0):
+    if len(test_label) != 0:
         acc = 0
         for i in range(len(test_label)):
             if predictions[i] == test_label[i]:
                 acc += 1
-        acc/=len(test_label)
-        acc = round(acc*100, 2)
+        acc /= len(test_label)
+        acc = round(acc * 100, 2)
         # print(f'Accuracy: {acc}%')
         # print(f'Error: {(100 - acc)}%')
 
@@ -477,7 +484,7 @@ def Naive_log_classifier(train_data, train_labels, test_data, prior_probability,
 
 
 def TiedGaussian(train_data, train_labels, test_data, prior_probability, test_label=[]):
-    '''
+    """
     Calculates the model of the Tied Gaussian classifier for a set of data, and applyes it to a test dataset
     :param train_date: matrix of the datapoints of a dataset used to train the model
     :param train_labels: row vector with the labels associated with each row of the training dataset
@@ -487,7 +494,7 @@ def TiedGaussian(train_data, train_labels, test_data, prior_probability, test_la
     :return S: matrix associated with the probability array
     :return predictions: Vector associated with the prediction of the class for each test data point
     :return acc: Accuracy of the validation set
-    '''
+    """
     class_labels = np.unique(train_labels)
     with_cov = covariance_within_class(train_data, train_labels)
     multi_mu = multiclass_mean(train_data, train_labels)
@@ -514,10 +521,11 @@ def TiedGaussian(train_data, train_labels, test_data, prior_probability, test_la
 
     return S, predictions, acc
 
+
 def Tied_Naive_classifier(
     train_data, train_labels, test_data, prior_probability, test_label=[]
 ):
-    '''
+    """
     Calculates the model of the Tied Naive classifier for a set of data, and applyes it to a test dataset
     :param train_date: matrix of the datapoints of a dataset used to train the model
     :param train_labels: row vector with the labels associated with each row of the training dataset
@@ -527,7 +535,7 @@ def Tied_Naive_classifier(
     :return S: matrix associated with the probability array
     :return predictions: Vector associated with the prediction of the class for each test data point
     :return acc: Accuracy of the validation set
-    '''
+    """
     class_labels = np.unique(train_labels)
     cov = covariance_within_class(train_data, train_labels)
     identity = np.eye(cov.shape[1])
@@ -535,9 +543,7 @@ def Tied_Naive_classifier(
     multi_mu = multiclass_mean(train_data, train_labels)
     densities = []
     for i in range(class_labels.size):
-        densities.append(
-            np.exp(logLikelihood(test_data, vcol(multi_mu[i, :]), cov))
-        )
+        densities.append(np.exp(logLikelihood(test_data, vcol(multi_mu[i, :]), cov)))
     S = np.array(densities)
     SJoint = S * prior_probability
     SMarginal = vrow(SJoint.sum(0))
@@ -555,10 +561,11 @@ def Tied_Naive_classifier(
 
     return S, predictions, acc
 
+
 def Generative_models(
     train_attributes, train_labels, test_attributes, prior_prob, test_labels, model
 ):
-    '''
+    """
     Calculates the desired generative model
     :param train_date: matrix of the datapoints of a dataset used to train the model
     :param train_labels: row vector with the labels associated with each row of the training dataset
@@ -573,7 +580,7 @@ def Generative_models(
     :return S: matrix associated with the probability array
     :return predictions: Vector associated with the prediction of the class for each test data point
     :return acc: Accuracy of the validation set
-    '''
+    """
     if model.lower() == "mvg":
         [Probabilities, Prediction, accuracy] = MVG_log_classifier(
             train_attributes, train_labels, test_attributes, prior_prob, test_labels
@@ -594,7 +601,8 @@ def Generative_models(
         accuracy = round(accuracy * 100, 2)
     return Probabilities, Prediction, accuracy
 
-def k_fold(k, attributes, labels, previous_prob, model="mvg"):
+
+def k_fold(k, attributes, labels, previous_prob, model="mvg", PCA_m=0):
     """
     Applies a k-fold cross validation on the dataset, applying the specified model.
     :param: `k` Number of partitions to divide the dataset
@@ -621,13 +629,16 @@ def k_fold(k, attributes, labels, previous_prob, model="mvg"):
             validation_labels = labels[low:high]
             train_att = attributes[:, high:]
             train_labels = labels[high:]
+            if PCA_m:
+                P, train_att = PCA(train_att, PCA_m)
+                validation_att = np.dot(P.T, validation_att)
             [S, _, acc] = Generative_models(
                 train_att,
                 train_labels,
                 validation_att,
                 previous_prob,
                 validation_labels,
-                model
+                model,
             )
             final_acc = acc
             final_S = S
@@ -642,17 +653,19 @@ def k_fold(k, attributes, labels, previous_prob, model="mvg"):
         train_labels = labels[:low]
         train_att = np.hstack((train_att, attributes[:, high:]))
         train_labels = np.hstack((train_labels, labels[high:]))
+        if PCA_m:
+            P, train_att = PCA(train_att, PCA_m)
+            validation_att = np.dot(P.T, validation_att)
         [S, _, acc] = Generative_models(
-                train_att,
-                train_labels,
-                validation_att,
-                previous_prob,
-                validation_labels,
-                model
-            )
+            train_att,
+            train_labels,
+            validation_att,
+            previous_prob,
+            validation_labels,
+            model,
+        )
         final_acc += acc
         final_S += S
     final_acc /= k
     final_S /= k
     return final_acc, final_S
-
